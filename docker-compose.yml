@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  app-dl:
+    container_name: app-dl
+    build: ./docker/php
+    volumes:
+      - ./:/var/www
+      - ./docker/php/php.ini:/usr/local/etc/php/php.ini
+      - ./log:/var/log
+
+  web-dl:
+    container_name: nginx-dl
+    image: nginx
+    ports:
+      - "${IP}:80:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+
+  # .envファイルの「DB_HOST」とサービス名を合わせる
+  db-dl:
+    image: mysql:latest
+    container_name: db-dl
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      # .envファイルの「DB_DATABASE」とMYSQL_DATABASEを合わせる
+      MYSQL_DATABASE: sample_db
+      TZ: "Asia/Tokyo"
+      # 文字コード指定
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - ./docker/db/data:/var/lib/mysql
+      - ./docker/db/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./docker/db/sql:/docker-entrypoint-initdb.d
+    ports:
+      - "${IP}:3306:3306"
+
+  phpmyadmin-dl:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin-dl
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=db-dl
+      - PMA_USER=root
+      - PMA_PASSWORD=root
+    links:
+      - db-dl
+    ports:
+      - 8580:80
+    volumes:
+      - /sessions
+
+  mailcatcher-dl:
+    image: schickling/mailcatcher
+    ports:
+      - 1080:1080
