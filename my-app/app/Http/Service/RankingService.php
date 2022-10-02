@@ -23,6 +23,7 @@ class RankingService
     /**
      * ランキングにscoreを新規登録します
      * 
+     * @param Request $request ランキングの登録リスト
      * @return List ソート後の配列
      */
     public function storeRanking($request) {
